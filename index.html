@@ -66,14 +66,22 @@
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
   #caption .cfile { color: #5c6573; font-size: 11px; margin-top: 6px; }
 
+  .menu-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 60; width: 44px; height: 44px; border-radius: 9px; border: 1px solid #4a5161; background: rgba(44,49,61,.92); color: #ffd86b; font-size: 21px; cursor: pointer; align-items: center; justify-content: center; }
+  .backdrop { display: none; }
   @media (max-width: 900px) {
-    body { flex-direction: column; overflow: auto; }
-    #left, #right { width: 100%; }
-    #left { border-right: none; border-bottom: 2px solid #333842; }
+    body { overflow: hidden; }
+    .menu-btn { display: flex; }
+    #left { position: fixed; top: 0; left: 0; bottom: 0; width: 86%; max-width: 390px; border-right: 1px solid #333842; transform: translateX(-100%); transition: transform .25s ease; z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,.55); }
+    body.drawer-open #left { transform: translateX(0); }
+    #right { width: 100%; padding: 56px 14px 16px; }
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
+    body.drawer-open .backdrop { display: block; }
   }
 </style>
 </head>
 <body>
+  <button class="menu-btn" onclick="toggleDrawer()" aria-label="목록 열기/닫기">☰</button>
+  <div class="backdrop" onclick="closeDrawer()"></div>
   <div id="left">
     <header>
       <div>
@@ -3869,7 +3877,7 @@ function buildRows() {
       '<td class="desc2">' + (lang==='ko'?(c.kdesc||''):(c.jdesc||'')) + '</td>' +
       '<td class="val">' + (lang==='ko'?koVal(c.v):c.v) + '</td>' +
       '<td class="dlg">' + (lang==='ko'?c.kd:c.jd) + '</td>';
-    tr.onclick = () => select(c.no);
+    tr.onclick = () => { select(c.no); closeDrawerOnMobile(); };
     tbody.appendChild(tr);
   });
 }
@@ -3893,7 +3901,7 @@ function buildSearchRows(q) {
         '<td class="name">' + (lang==='ko'?c.kn:c.jn) + '</td>' +
         '<td class="loc2">' + (lang==='ko'?e.plKo:e.plJa) + '</td>' +
         '<td class="val">' + (lang==='ko'?koVal(c.v):c.v) + '</td>';
-      tr.onclick = () => showCard(e.se, e.c, e.plKo, e.plJa);
+      tr.onclick = () => { showCard(e.se, e.c, e.plKo, e.plJa); closeDrawerOnMobile(); };
       frag.appendChild(tr);
     }
   }
@@ -3947,6 +3955,9 @@ function filter() {
   if (v) { searchMode = true; curQuery = v; buildProdTabs(); buildPenTabs(); buildSeriesTabs(); buildSearchRows(v); }
   else { searchMode = false; curQuery = ''; scount.textContent = ''; render(); }
 }
+function toggleDrawer() { document.body.classList.toggle('drawer-open'); }
+function closeDrawer() { document.body.classList.remove('drawer-open'); }
+function closeDrawerOnMobile() { if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('drawer-open'); }
 
 selectedNo = curSer().cards[0].no;
 render();

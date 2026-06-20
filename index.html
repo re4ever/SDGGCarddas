@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SD건담외전 카드다스 뷰어</title>
+<title>SD건담외전 카드다스 아카이브</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body { font-family: "Malgun Gothic", "맑은 고딕", "Meiryo", sans-serif; background: #1a1d24; color: #e8e8ec; display: flex; height: 100vh; overflow: hidden; }
-  #left { width: 56%; display: flex; flex-direction: column; border-right: 2px solid #333842; min-width: 0; }
+  #left { width: 56%; display: flex; flex-direction: column; border-right: 2px solid #333842; min-width: 0; background: #1a1d24; }
   header { padding: 10px 18px; background: #232732; border-bottom: 1px solid #333842; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   header h1 { font-size: 16px; font-weight: 700; color: #ffd86b; }
   header .sub { font-size: 11px; color: #8b94a3; }
@@ -54,7 +54,11 @@
   td.val { white-space: nowrap; color: #7fd1a0; font-weight: 700; font-family: Consolas, monospace; }
   td.dlg { color: #cfd5e0; line-height: 1.4; }
 
-  #right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: #141720; min-width: 0; }
+  #right { flex: 1; display: flex; flex-direction: column; background: #141720; min-width: 0; }
+  #stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-width: 0; min-height: 0; position: relative; }
+  .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 66px; border: none; border-radius: 9px; background: rgba(255,255,255,.06); color: #cfd5e0; font-size: 30px; line-height: 1; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+  .nav-prev { left: 12px; } .nav-next { right: 12px; }
   #cap-dlg { max-width: 92%; margin-bottom: 14px; color: #eef1f6; font-size: 15px; line-height: 1.55; text-align: center; font-weight: 600; }
   #cap-dlg:not(:empty)::before { content: "“"; color: #ffd86b; margin-right: 2px; }
   #cap-dlg:not(:empty)::after { content: "”"; color: #ffd86b; margin-left: 2px; }
@@ -73,7 +77,14 @@
     .menu-btn { display: flex; }
     #left { position: fixed; top: 0; left: 0; bottom: 0; width: 86%; max-width: 390px; border-right: 1px solid #333842; transform: translateX(-100%); transition: transform .25s ease; z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,.55); }
     body.drawer-open #left { transform: translateX(0); }
-    #right { width: 100%; padding: 56px 14px 16px; }
+    #right { width: 100%; }
+    #stage { padding: 10px; overflow-y: auto; overflow-x: hidden; }
+    #right img { max-height: 50vh; }
+    .prodtabs, .pentabs, .seriestabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .prodtabs button, .pentabs button, .seriestabs button { flex: 0 0 auto; }
+    header { padding-left: 64px; }
+    td.desc2, td.dlg, .col-desc, .col-dlg { display: none; }
+    .nav-btn { width: 40px; height: 58px; font-size: 26px; }
     .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
     body.drawer-open .backdrop { display: block; }
   }
@@ -83,18 +94,6 @@
   <button class="menu-btn" onclick="toggleDrawer()" aria-label="목록 열기/닫기">☰</button>
   <div class="backdrop" onclick="closeDrawer()"></div>
   <div id="left">
-    <header>
-      <div>
-        <h1>SD건담외전 카드다스 뷰어</h1>
-      </div>
-      <div class="toggle">
-        <button id="btn-ko" class="active" onclick="setLang('ko')">한글</button>
-        <button id="btn-ja" onclick="setLang('ja')">日本語</button>
-      </div>
-    </header>
-    <div class="prodtabs" id="prodtabs"></div>
-    <div class="pentabs" id="pentabs"></div>
-    <div class="seriestabs" id="seriestabs"></div>
     <div id="search">
       <input type="text" id="q" placeholder="🔍 캐릭터 이름·번호 검색 (전체 시리즈)…" oninput="filter()">
       <label class="ext"><input type="checkbox" id="extchk" onchange="filter()"> 대사·설명 포함</label>
@@ -108,14 +107,28 @@
     </div>
   </div>
   <div id="right">
-    <div id="cap-dlg"></div>
-    <img id="preview" src="" alt="">
-    <div id="caption">
-      <div class="cloc" id="cap-loc"></div>
-      <div class="cno" id="cap-no"></div>
-      <div class="cname" id="cap-name"></div>
-      <div class="cdesc" id="cap-desc" style="color:#9aa6b6;font-size:13px;margin:2px 0 6px;"></div>
-      <div class="cval" id="cap-val"></div>
+    <header>
+      <div><h1>SD건담외전 카드다스 아카이브</h1></div>
+      <div class="toggle">
+        <button id="btn-ko" class="active" onclick="setLang('ko')">한글</button>
+        <button id="btn-ja" onclick="setLang('ja')">日本語</button>
+      </div>
+    </header>
+    <div class="prodtabs" id="prodtabs"></div>
+    <div class="pentabs" id="pentabs"></div>
+    <div class="seriestabs" id="seriestabs"></div>
+    <div id="stage">
+      <button class="nav-btn nav-prev" onclick="nav(-1)" aria-label="이전 카드">‹</button>
+      <button class="nav-btn nav-next" onclick="nav(1)" aria-label="다음 카드">›</button>
+      <div id="cap-dlg"></div>
+      <img id="preview" src="" alt="">
+      <div id="caption">
+        <div class="cloc" id="cap-loc"></div>
+        <div class="cno" id="cap-no"></div>
+        <div class="cname" id="cap-name"></div>
+        <div class="cdesc" id="cap-desc" style="color:#9aa6b6;font-size:13px;margin:2px 0 6px;"></div>
+        <div class="cval" id="cap-val"></div>
+      </div>
     </div>
   </div>
 
@@ -3813,7 +3826,7 @@ PRODUCTS.forEach(p => p.pens.forEach(pe => pe.series.forEach(se => {
 })));
 
 let lang = 'ko', curProd = 0, curPen = 0, curSeries = 0, selectedNo = null;
-let searchMode = false, curQuery = '', selectedImg = null;
+let searchMode = false, curQuery = '', selectedImg = null, curList = [];
 const tbody = document.getElementById('tbody');
 const prodEl = document.getElementById('prodtabs');
 const penEl = document.getElementById('pentabs');
@@ -3854,7 +3867,7 @@ function buildSeriesTabs() {
 function setHead(search) {
   document.getElementById('thead-row').innerHTML = search
     ? '<th>카드번호</th><th>캐릭터이름</th><th>시리즈</th><th>수치</th>'
-    : '<th>카드번호</th><th>캐릭터이름</th><th>설명</th><th>수치</th><th>대사</th>';
+    : '<th>카드번호</th><th>캐릭터이름</th><th class="col-desc">설명</th><th>수치</th><th class="col-dlg">대사</th>';
 }
 function numCell(c, se) {
   return '<td class="no"><div class="nocell"><img class="thumb" loading="lazy" src=".thumbnail/' + c.img + '" alt=""><span>' + shownNo(c.no) + '</span></div></td>';
@@ -3870,6 +3883,9 @@ function buildRows() {
   setHead(false);
   tbody.innerHTML = '';
   const se = curSer();
+  const lk = PRODUCTS[curProd].titleKo+' · '+curPens()[curPen].titleKo+' · '+se.titleKo;
+  const lj = PRODUCTS[curProd].titleJa+' · '+curPens()[curPen].titleJa+' · '+se.titleJa;
+  curList = se.cards.map(function(c){ return { c: c, se: se, lk: lk, lj: lj }; });
   se.cards.forEach(c => {
     const tr = newTr(c);
     tr.innerHTML = numCell(c, se) +
@@ -3885,6 +3901,7 @@ function buildRows() {
 function buildSearchRows(q) {
   setHead(true);
   tbody.innerHTML = '';
+  curList = [];
   const ext = document.getElementById('extchk').checked;
   let n = 0; const LIMIT = 800;
   const frag = document.createDocumentFragment();
@@ -3896,6 +3913,7 @@ function buildSearchRows(q) {
     if (!hay.includes(q)) continue;
     n++;
     if (n <= LIMIT) {
+      curList.push({ c: e.c, se: e.se, lk: e.plKo, lj: e.plJa });
       const tr = newTr(c);
       tr.innerHTML = numCell(c, e.se) +
         '<td class="name">' + (lang==='ko'?c.kn:c.jn) + '</td>' +
@@ -3910,7 +3928,7 @@ function buildSearchRows(q) {
 }
 
 function showCard(se, c, locKo, locJa) {
-  selectedImg = c.img;
+  selectedImg = c.img; selectedNo = c.no;
   document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.toggle('selected', tr.dataset.img === c.img));
   document.getElementById('cap-dlg').textContent = (lang==='ko' ? c.kd : c.jd) || '';
   document.getElementById('preview').src = imgOf(se, c);
@@ -3958,6 +3976,64 @@ function filter() {
 function toggleDrawer() { document.body.classList.toggle('drawer-open'); }
 function closeDrawer() { document.body.classList.remove('drawer-open'); }
 function closeDrawerOnMobile() { if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('drawer-open'); }
+let SERIES_FLAT = null;
+function seriesFlat() {
+  if (SERIES_FLAT) return SERIES_FLAT;
+  SERIES_FLAT = [];
+  PRODUCTS.forEach(function(p, pi){ p.pens.forEach(function(pe, ei){ pe.series.forEach(function(se, si){ SERIES_FLAT.push({ pi: pi, ei: ei, si: si }); }); }); });
+  return SERIES_FLAT;
+}
+function nav(dir) {
+  if (!curList.length) return;
+  let idx = curList.findIndex(function(e){ return e.c.img === selectedImg; });
+  if (idx < 0) idx = 0;
+  const ni = idx + dir;
+  if (ni >= 0 && ni < curList.length) {
+    const e = curList[ni];
+    showCard(e.se, e.c, e.lk, e.lj);
+    const row = document.querySelector('#tbody tr[data-img="' + e.c.img + '"]');
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+    return;
+  }
+  // 검색 중에는 결과 안에서만 이동
+  if (searchMode) return;
+  // 시리즈 경계 → 인접 시리즈로 이동 (끝에서는 순환)
+  const flat = seriesFlat();
+  const pos = flat.findIndex(function(s){ return s.pi===curProd && s.ei===curPen && s.si===curSeries; });
+  if (pos < 0) return;
+  let np = pos + dir;
+  if (np < 0) np = flat.length - 1;
+  if (np >= flat.length) np = 0;
+  const s = flat[np];
+  curProd = s.pi; curPen = s.ei; curSeries = s.si;
+  const cards = curSer().cards;
+  const tgt = (dir > 0) ? cards[0] : cards[cards.length - 1];
+  selectedNo = tgt.no; selectedImg = tgt.img;
+  render();
+  const row = document.querySelector('#tbody tr.selected');
+  if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+}
+document.addEventListener('keydown', function(ev){
+  if (ev.target && ev.target.id === 'q') return;
+  if (ev.key === 'ArrowLeft') nav(-1);
+  else if (ev.key === 'ArrowRight') nav(1);
+});
+(function(){
+  const area = document.getElementById('right');
+  let sx = 0, sy = 0, st = 0, tracking = false;
+  area.addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1) { tracking = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); tracking = true;
+  }, { passive: true });
+  area.addEventListener('touchend', function(e){
+    if (!tracking) return; tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4 && (Date.now() - st) < 700) {
+      nav(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+})();
 
 selectedNo = curSer().cards[0].no;
 render();

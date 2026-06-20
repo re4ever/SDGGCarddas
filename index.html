@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>SD건담외전 카드다스 아카이브</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-  body { font-family: "Malgun Gothic", "맑은 고딕", "Meiryo", sans-serif; background: #1a1d24; color: #e8e8ec; display: flex; height: 100vh; overflow: hidden; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", "Meiryo", sans-serif; background: #1a1d24; color: #e8e8ec; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
   #left { width: 56%; display: flex; flex-direction: column; border-right: 2px solid #333842; min-width: 0; background: #1a1d24; }
   header { padding: 10px 18px; background: #232732; border-bottom: 1px solid #333842; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   header h1 { font-size: 16px; font-weight: 700; color: #ffd86b; }
@@ -56,8 +56,11 @@
 
   #right { flex: 1; display: flex; flex-direction: column; background: #141720; min-width: 0; }
   #stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; min-width: 0; min-height: 0; position: relative; }
+  .imgwrap { position: relative; display: flex; align-items: center; justify-content: center; max-width: 100%; min-height: 0; }
   .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 66px; border: none; border-radius: 9px; background: rgba(255,255,255,.06); color: #cfd5e0; font-size: 30px; line-height: 1; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; }
   .nav-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+  .nav-btn:disabled { opacity: .2; cursor: default; }
+  .nav-btn:disabled:hover { background: rgba(255,255,255,.06); color: #cfd5e0; }
   .nav-prev { left: 12px; } .nav-next { right: 12px; }
   #cap-dlg { max-width: 92%; margin-bottom: 14px; color: #eef1f6; font-size: 15px; line-height: 1.55; text-align: center; font-weight: 600; }
   #cap-dlg:not(:empty)::before { content: "“"; color: #ffd86b; margin-right: 2px; }
@@ -70,19 +73,19 @@
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
   #caption .cfile { color: #5c6573; font-size: 11px; margin-top: 6px; }
 
-  .menu-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 60; width: 44px; height: 44px; border-radius: 9px; border: 1px solid #4a5161; background: rgba(44,49,61,.92); color: #ffd86b; font-size: 21px; cursor: pointer; align-items: center; justify-content: center; }
+  .menu-btn { display: none; position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); left: 10px; z-index: 60; width: 44px; height: 44px; border-radius: 9px; border: 1px solid #4a5161; background: rgba(44,49,61,.92); color: #ffd86b; font-size: 21px; cursor: pointer; align-items: center; justify-content: center; }
   .backdrop { display: none; }
   @media (max-width: 900px) {
     body { overflow: hidden; }
     .menu-btn { display: flex; }
-    #left { position: fixed; top: 0; left: 0; bottom: 0; width: 86%; max-width: 390px; border-right: 1px solid #333842; transform: translateX(-100%); transition: transform .25s ease; z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,.55); }
+    #left { position: fixed; top: 0; left: 0; bottom: 0; width: 86%; max-width: 390px; border-right: 1px solid #333842; transform: translateX(-100%); transition: transform .25s ease; z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,.55); padding-top: calc(58px + env(safe-area-inset-top, 0px)); }
     body.drawer-open #left { transform: translateX(0); }
     #right { width: 100%; }
     #stage { padding: 10px; overflow-y: auto; overflow-x: hidden; }
     #right img { max-height: 50vh; }
     .prodtabs, .pentabs, .seriestabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .prodtabs button, .pentabs button, .seriestabs button { flex: 0 0 auto; }
-    header { padding-left: 64px; }
+    header { padding-left: 64px; padding-top: calc(11px + env(safe-area-inset-top, 0px)); }
     td.desc2, td.dlg, .col-desc, .col-dlg { display: none; }
     .nav-btn { width: 40px; height: 58px; font-size: 26px; }
     .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
@@ -118,10 +121,12 @@
     <div class="pentabs" id="pentabs"></div>
     <div class="seriestabs" id="seriestabs"></div>
     <div id="stage">
-      <button class="nav-btn nav-prev" onclick="nav(-1)" aria-label="이전 카드">‹</button>
-      <button class="nav-btn nav-next" onclick="nav(1)" aria-label="다음 카드">›</button>
       <div id="cap-dlg"></div>
-      <img id="preview" src="" alt="">
+      <div class="imgwrap">
+        <button class="nav-btn nav-prev" onclick="nav(-1)" aria-label="이전 카드">‹</button>
+        <img id="preview" src="" alt="">
+        <button class="nav-btn nav-next" onclick="nav(1)" aria-label="다음 카드">›</button>
+      </div>
       <div id="caption">
         <div class="cloc" id="cap-loc"></div>
         <div class="cno" id="cap-no"></div>
@@ -898,7 +903,7 @@ const PRODUCTS = [{"titleKo":"SD건담외전","titleJa":"SDガンダム外伝","
 {"no":"560","img":"14105600.jpg","jdesc":"","kdesc":"","jn":"飛行機兵ストンナ・アジール","v":"MP140000","jd":"そして天空船が…","kn":"비행 기병 스톤나 아질","kd":"그리고 천공선이…"},
 {"no":"561","img":"14105610.jpg","jdesc":"","kdesc":"","jn":"天空船ベールギュント","v":"MP10000","jd":"天空魔城ゲルニカから発進した。","kn":"천공선 베르귄트","kd":"천공마성 게르니카에서 발진했다."},
 {"no":"562","img":"14105620.jpg","jdesc":"ネオジオン族の巨大要塞","kdesc":"네오지온족의 거대 요새","jn":"侵攻要塞グランザム","v":"MP7000","jd":"地面を揺るがして侵攻要塞は進む！","kn":"침공 요새 그란잠","kd":"땅을 뒤흔들며 침공 요새가 나아간다！"},
-{"no":"563","img":"14105630.jpg","jdesc":"","kdesc":"","jn":"特攻機兵ザマーク","v":"MP35000","jd":"特攻機兵があらわれた！","kn":"특공 기병 자마크","kd":"특공 기병이 나타났다！"},
+{"no":"563","img":"14105630.jpg","jdesc":"","kdesc":"","jn":"特攻機兵ゲ・マーク","v":"MP35000","jd":"特攻機兵があらわれた！","kn":"특공기병 게·마크","kd":"특공 기병이 나타났다！"},
 {"no":"564","img":"14105640.jpg","jdesc":"ネオジオン族の戦士","kdesc":"네오지온족의 전사","jn":"戦士ゲルククマリーネ","v":"HP6400","jd":"あの紅い光はなんだ？","kn":"전사 겔구크 마리네","kd":"저 붉은 빛은 뭐냐？"},
 {"no":"565","img":"14105650.jpg","jdesc":"火薬を使うネオジオン族の闘士","kdesc":"화약을 쓰는 네오지온족의 투사","jn":"爆装闘士ギラ・ドーガ","v":"HP6500","jd":"俺と一緒に吹っ飛んでいいなら、かかって来い…。","kn":"폭장 투사 기라 도가","kd":"나와 함께 날아가도 좋다면, 덤벼라…."},
 {"no":"566","img":"14105660.jpg","jdesc":"ネオジオン族の騎士","kdesc":"네오지온족의 기사","jn":"騎士クフトライ","v":"HP2900","jd":"ふっ、もう少し気合入れて、かかって来いよ。","kn":"기사 크프트라이","kd":"훗, 좀 더 기합 넣고, 덤벼라."},
@@ -3937,6 +3942,23 @@ function showCard(se, c, locKo, locJa) {
   document.getElementById('cap-name').textContent = (lang==='ko'?c.kn:c.jn);
   document.getElementById('cap-desc').textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);
+  updateNavButtons();
+}
+function updateNavButtons() {
+  const prevB = document.querySelector('.nav-prev'), nextB = document.querySelector('.nav-next');
+  if (!prevB || !nextB) return;
+  let idx = curList.findIndex(function(e){ return e.c.img === selectedImg; });
+  if (idx < 0) idx = 0;
+  let atFirst, atLast;
+  if (searchMode) {
+    atFirst = idx <= 0; atLast = idx >= curList.length - 1;
+  } else {
+    const flat = seriesFlat();
+    const pos = flat.findIndex(function(s){ return s.pi===curProd && s.ei===curPen && s.si===curSeries; });
+    atFirst = (pos <= 0) && (idx <= 0);
+    atLast = (pos >= flat.length - 1) && (idx >= curList.length - 1);
+  }
+  prevB.disabled = atFirst; nextB.disabled = atLast;
 }
 function select(no) {
   selectedNo = no;
@@ -4001,9 +4023,8 @@ function nav(dir) {
   const flat = seriesFlat();
   const pos = flat.findIndex(function(s){ return s.pi===curProd && s.ei===curPen && s.si===curSeries; });
   if (pos < 0) return;
-  let np = pos + dir;
-  if (np < 0) np = flat.length - 1;
-  if (np >= flat.length) np = 0;
+  const np = pos + dir;
+  if (np < 0 || np >= flat.length) return;
   const s = flat[np];
   curProd = s.pi; curPen = s.ei; curSeries = s.si;
   const cards = curSer().cards;
@@ -4019,7 +4040,7 @@ document.addEventListener('keydown', function(ev){
   else if (ev.key === 'ArrowRight') nav(1);
 });
 (function(){
-  const area = document.getElementById('right');
+  const area = document.getElementById('stage');
   let sx = 0, sy = 0, st = 0, tracking = false;
   area.addEventListener('touchstart', function(e){
     if (e.touches.length !== 1) { tracking = false; return; }

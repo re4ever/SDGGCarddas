@@ -268,7 +268,7 @@ function showCard(se, c, locKo, locJa) {
   img.onload = setOrient;
   img.src = imgOf(se, c);
   setOrient();
-  document.getElementById('cap-no').textContent = (/^[0-9.\-]+$/.test(c.no) ? 'No. '+c.no : shownNo(c.no));
+  document.getElementById('cap-no').textContent = shownNo(c.no);
   document.getElementById('cap-name').textContent = (lang==='ko'?c.kn:c.jn);
   document.getElementById('cap-desc').textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);

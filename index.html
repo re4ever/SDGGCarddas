@@ -62,15 +62,21 @@
   .nav-btn:disabled { opacity: .2; cursor: default; }
   .nav-btn:disabled:hover { background: rgba(255,255,255,.06); color: #cfd5e0; }
   .nav-prev { left: 12px; } .nav-next { right: 12px; }
-  #cap-dlg { max-width: 92%; margin-bottom: 14px; color: #eef1f6; font-size: 15px; line-height: 1.55; text-align: center; font-weight: 600; }
+  #cap-dlg { max-width: 94%; margin-bottom: 14px; color: #eef1f6; font-size: 15px; line-height: 1.4; text-align: center; font-weight: 600; white-space: nowrap; overflow: hidden; }
   #cap-dlg:not(:empty)::before { content: "“"; color: #ffd86b; margin-right: 2px; }
   #cap-dlg:not(:empty)::after { content: "”"; color: #ffd86b; margin-left: 2px; }
   #right img { max-width: 100%; max-height: 64vh; border-radius: 4% / 5.8%; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
   #caption { margin-top: 16px; text-align: center; }
   #caption .cloc { color: #7b5cff; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
   #caption .cno { color: #ffd86b; font-weight: 700; font-size: 15px; }
-  #caption .cname { color: #fff; font-size: 18px; font-weight: 700; margin: 4px 0; }
+  #caption .cname { color: #fff; font-size: 18px; font-weight: 700; margin: 0; }
+  #cap-link { background: none; border: none; color: #8b94a3; cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; }
+  #cap-link:hover { color: #ffd86b; }
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
+  #caption .cmeta { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; }
+  #caption .cdesc { color: #9aa6b6; font-size: 13px; margin: 4px 0 0; }
+  #stage.portrait #caption .cmeta { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; }
+  #stage.portrait #caption .cname { margin: 0; }
   #caption .cfile { color: #5c6573; font-size: 11px; margin-top: 6px; }
 
   .menu-btn { display: none; position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); left: 10px; z-index: 60; width: 44px; height: 44px; border-radius: 9px; border: 1px solid #4a5161; background: rgba(44,49,61,.92); color: #ffd86b; font-size: 21px; cursor: pointer; align-items: center; justify-content: center; }
@@ -81,7 +87,7 @@
     #left { position: fixed; top: 0; left: 0; bottom: 0; width: 86%; max-width: 390px; border-right: 1px solid #333842; transform: translateX(-100%); transition: transform .25s ease; z-index: 50; box-shadow: 4px 0 24px rgba(0,0,0,.55); padding-top: calc(58px + env(safe-area-inset-top, 0px)); }
     body.drawer-open #left { transform: translateX(0); }
     #right { width: 100%; }
-    #stage { padding: 10px; overflow-y: auto; overflow-x: hidden; }
+    #stage { padding: 10px; overflow-y: auto; overflow-x: hidden; justify-content: flex-start; }
     #right img { max-height: 50vh; }
     .prodtabs, .pentabs, .seriestabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .prodtabs button, .pentabs button, .seriestabs button { flex: 0 0 auto; }
@@ -128,11 +134,13 @@
         <button class="nav-btn nav-next" onclick="nav(1)" aria-label="다음 카드">›</button>
       </div>
       <div id="caption">
-        <div class="cloc" id="cap-loc"></div>
-        <div class="cno" id="cap-no"></div>
-        <div class="cname" id="cap-name"></div>
-        <div class="cdesc" id="cap-desc" style="color:#9aa6b6;font-size:13px;margin:2px 0 6px;"></div>
-        <div class="cval" id="cap-val"></div>
+        <div class="cmeta">
+          <span class="cno" id="cap-no"></span>
+          <span class="cname" id="cap-name"></span>
+          <span class="cval" id="cap-val"></span>
+          <button id="cap-link" title="이 카드 링크 복사" onclick="copyCardLink()">🔗</button>
+        </div>
+        <div class="cdesc" id="cap-desc"></div>
       </div>
     </div>
   </div>
@@ -326,10 +334,10 @@ const PRODUCTS = [{"titleKo":"SD건담외전","titleJa":"SDガンダム外伝","
   {
     "no": "350.5",
     "img":"13103503.jpg","jdesc":"","kdesc":"",
-    "jn": "聖機兵キングヴァトラス",
+    "jn": "聖機兵キングヴァトラスと円卓の騎士たち",
     "v": "",
     "jd": "遥かブリティス…新たなる使命が騎士たちを待つ…。",
-    "kn": "성기병 킹바트라스",
+    "kn": "성기병 킹바트라스와 원탁의 기사들",
     "kd": "아득한 브리티스... 새로운 사명이 기사들을 기다린다..."
   },
   {
@@ -3932,18 +3940,36 @@ function buildSearchRows(q) {
   scount.innerHTML = '검색 결과 <b>' + n + '</b>건' + (n > LIMIT ? ' (상위 ' + LIMIT + '건 표시)' : '');
 }
 
+function setOrient() {
+  const img = document.getElementById('preview');
+  if (img.naturalWidth) document.getElementById('stage').classList.toggle('portrait', img.naturalHeight > img.naturalWidth);
+}
+function fitDialogue() {
+  const el = document.getElementById('cap-dlg');
+  if (!el) return;
+  if (!el.textContent) { el.style.fontSize = ''; return; }
+  let size = 16; el.style.fontSize = size + 'px';
+  let guard = 0;
+  while (el.scrollWidth > el.clientWidth + 1 && size > 8 && guard < 40) { size -= 0.5; el.style.fontSize = size + 'px'; guard++; }
+}
+function cardIdOf(c) { return c.img.replace(/\.(jpg|png)$/i, ''); }
 function showCard(se, c, locKo, locJa) {
   selectedImg = c.img; selectedNo = c.no;
+  try { history.replaceState(null, '', '#' + cardIdOf(c)); } catch (e) {}
   document.querySelectorAll('#tbody tr').forEach(tr => tr.classList.toggle('selected', tr.dataset.img === c.img));
   document.getElementById('cap-dlg').textContent = (lang==='ko' ? c.kd : c.jd) || '';
-  document.getElementById('preview').src = imgOf(se, c);
-  document.getElementById('cap-loc').textContent = (lang==='ko' ? locKo : locJa);
+  const img = document.getElementById('preview');
+  img.onload = setOrient;
+  img.src = imgOf(se, c);
+  setOrient();
   document.getElementById('cap-no').textContent = (/^[0-9.\-]+$/.test(c.no) ? 'No. '+c.no : shownNo(c.no));
   document.getElementById('cap-name').textContent = (lang==='ko'?c.kn:c.jn);
   document.getElementById('cap-desc').textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);
   updateNavButtons();
+  fitDialogue();
 }
+window.addEventListener('resize', function(){ if (selectedImg) fitDialogue(); });
 function updateNavButtons() {
   const prevB = document.querySelector('.nav-prev'), nextB = document.querySelector('.nav-next');
   if (!prevB || !nextB) return;
@@ -3998,6 +4024,26 @@ function filter() {
 function toggleDrawer() { document.body.classList.toggle('drawer-open'); }
 function closeDrawer() { document.body.classList.remove('drawer-open'); }
 function closeDrawerOnMobile() { if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('drawer-open'); }
+function goToHash() {
+  const id = decodeURIComponent((location.hash || '').replace(/^#/, '')).trim();
+  if (!id) return false;
+  const e = ALL.find(function(x){ return cardIdOf(x.c) === id; });
+  if (!e) return false;
+  searchMode = false; curQuery = '';
+  const q = document.getElementById('q'); if (q) q.value = '';
+  if (scount) scount.textContent = '';
+  curProd = e.pi; curPen = e.ei; curSeries = e.si; selectedNo = e.c.no; selectedImg = e.c.img;
+  render();
+  const row = document.querySelector('#tbody tr.selected');
+  if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+  return true;
+}
+function copyCardLink() {
+  const url = location.href;
+  const done = function(){ const b = document.getElementById('cap-link'); if (!b) return; b.textContent = '✓'; setTimeout(function(){ b.textContent = '🔗'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, done);
+  else { try { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); } catch (e) {} }
+}
 let SERIES_FLAT = null;
 function seriesFlat() {
   if (SERIES_FLAT) return SERIES_FLAT;
@@ -4057,7 +4103,8 @@ document.addEventListener('keydown', function(ev){
 })();
 
 selectedNo = curSer().cards[0].no;
-render();
+if (!goToHash()) render();
+window.addEventListener('hashchange', goToHash);
 </script>
 </body>
 </html>

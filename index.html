@@ -115,8 +115,7 @@
     body.drawer-open #left { transform: translateX(0); }
     #right { width: 100%; }
     #stage { padding: 10px; overflow-y: auto; overflow-x: hidden; justify-content: flex-start; }
-    .imgwrap { height: 46vh; }
-    #stage.portrait .imgwrap { height: 58vh; }
+    .imgwrap, #stage.portrait .imgwrap { height: auto; flex: 1 1 0; min-height: 0; }
     .prodtabs, .pentabs, .seriestabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .prodtabs button, .pentabs button, .seriestabs button { flex: 0 0 auto; }
     header { padding-left: 64px; padding-top: calc(11px + env(safe-area-inset-top, 0px)); }

@@ -94,6 +94,7 @@
   .rmbox h3 { font-size: 15px; color: #ffd86b; margin-bottom: 4px; }
   .rmbox .rmsub { font-size: 12px; color: #9aa6b6; margin-bottom: 12px; }
   .rmbox .rmsub b { color: #7fd1ff; }
+  .rmbox .rmlabel { font-size: 12px; color: #cfd5e0; font-weight: 600; margin: 0 2px 6px; }
   .rmbox textarea { width: 100%; min-height: 84px; resize: vertical; padding: 9px 11px; border-radius: 8px; border: 1px solid #3c4150; background: #161922; color: #e8e8ec; font-size: 13px; font-family: inherit; line-height: 1.45; }
   .rmbox .rmhint { font-size: 11px; color: #6f7a8a; margin: 6px 2px 14px; }
   .rmbtns { display: flex; gap: 8px; justify-content: flex-end; }
@@ -181,8 +182,9 @@
     <div class="rmbox">
       <h3>오역 신고</h3>
       <div class="rmsub">범위: <b id="rm-scope"></b></div>
-      <textarea id="rm-suggest" placeholder="번역 제안을 적어주세요 (선택 사항 — 비워두고 제출해도 됩니다)"></textarea>
-      <div class="rmhint">현재 카드의 링크와 함께 제출됩니다.</div>
+      <div class="rmlabel">제안사항 (선택)</div>
+      <textarea id="rm-suggest"></textarea>
+      <div class="rmhint">현재 내용이 미리 입력되어 있습니다. 수정하지 않고 제출하면 제안은 비워서 전송됩니다.</div>
       <div class="rmbtns">
         <button class="rm-cancel" onclick="closeReport()">취소</button>
         <button class="rm-ok" onclick="submitReport()">확인</button>
@@ -400,7 +402,7 @@ var FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLScYZF_S0si-2OLJBKacN
 var FORM_ANCHOR = 'entry.100283352';
 var FORM_SCOPE = 'entry.617394472';
 var FORM_SUGGEST = 'entry.1950726599';
-var reportScope = null;
+var reportScope = null, reportOriginal = '';
 function showToast(msg) {
   var t = document.getElementById('rtoast'); if (!t) return;
   t.textContent = msg; t.classList.add('show');
@@ -410,7 +412,10 @@ function openReport(scope) {
   if (!selectedImg) { showToast('먼저 카드를 선택해 주세요.'); return; }
   reportScope = scope;
   document.getElementById('rm-scope').textContent = scope;
-  var ta = document.getElementById('rm-suggest'); ta.value = '';
+  var srcId = scope === '캐릭터 이름' ? 'cap-name' : (scope === '캐릭터 설명' ? 'cap-desc' : 'cap-dlg');
+  var src = document.getElementById(srcId);
+  reportOriginal = (src && src.textContent) ? src.textContent : '';
+  var ta = document.getElementById('rm-suggest'); ta.value = reportOriginal;
   document.getElementById('rmodal').classList.add('show');
   ta.focus();
 }
@@ -420,7 +425,9 @@ function closeReport() {
 }
 function submitReport() {
   if (!reportScope || !selectedImg) { closeReport(); return; }
-  var suggest = document.getElementById('rm-suggest').value.trim();
+  var val = document.getElementById('rm-suggest').value;
+  // 페이지 텍스트 그대로(수정 안 함)면 제안을 비워서 제출
+  var suggest = (val.trim() === reportOriginal.trim()) ? '' : val.trim();
   var ifr = document.getElementById('rsink');
   if (!ifr) { ifr = document.createElement('iframe'); ifr.id = 'rsink'; ifr.name = 'rsink'; ifr.style.display = 'none'; document.body.appendChild(ifr); }
   var f = document.createElement('form');

@@ -30,11 +30,13 @@
   .seriestabs button.active { background: #141720; color: #7fd1ff; font-weight: 700; border-color: #4a5161; }
   .seriestabs .cnt { color: #5c6573; font-size: 10px; margin-left: 4px; }
 
-  #search { padding: 8px 18px; background: #20242e; border-bottom: 1px solid #333842; display: flex; align-items: center; gap: 10px; }
+  #search { padding: 8px 18px; background: #20242e; border-bottom: 1px solid #333842; display: flex; flex-direction: column; gap: 6px; }
+  #search-row { display: flex; align-items: center; gap: 10px; }
   #search input { flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #3c4150; background: #161922; color: #e8e8ec; font-size: 13px; }
   #search label.ext { font-size: 12px; color: #aab2c0; white-space: nowrap; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
   #search label.ext input { cursor: pointer; }
-  #scount { font-size: 11px; color: #8b94a3; white-space: nowrap; }
+  #scount { font-size: 11px; color: #8b94a3; white-space: nowrap; text-align: right; }
+  #scount:empty { display: none; }
   #scount b { color: #ffd86b; }
 
   .tablewrap { flex: 1; overflow-y: auto; }
@@ -131,9 +133,11 @@
   <div class="backdrop" onclick="closeDrawer()"></div>
   <div id="left">
     <div id="search">
-      <input type="text" id="q" placeholder="🔍 캐릭터 이름·번호 검색 (전체 시리즈)…" oninput="filter()">
-      <label class="ext"><input type="checkbox" id="extchk" onchange="filter()"> 대사·설명 포함</label>
       <span id="scount"></span>
+      <div id="search-row">
+        <input type="text" id="q" placeholder="🔍 캐릭터 이름·번호 검색 (전체 시리즈)…" oninput="filter()">
+        <label class="ext"><input type="checkbox" id="extchk" onchange="filter()"> 대사·설명 포함</label>
+      </div>
     </div>
     <div class="tablewrap">
       <table>
@@ -199,6 +203,7 @@
 let PRODUCTS = [];
 
 let lang = 'ko', curProd = 0, curPen = 0, curSeries = 0, selectedNo = null;
+let searchLocated = false;
 let searchMode = false, curQuery = '', selectedImg = null, curList = [];
 const tbody = document.getElementById('tbody');
 const prodEl = document.getElementById('prodtabs');
@@ -221,20 +226,26 @@ function tab(label, active, on) {
 }
 function buildProdTabs() {
   prodEl.innerHTML = '';
-  PRODUCTS.forEach((p, i) => prodEl.appendChild(tab(lang==='ko'?p.titleKo:p.titleJa, !searchMode && i===curProd, () => goSeries(i,0,0))));
+  const act = !searchMode || searchLocated;
+  PRODUCTS.forEach((p, i) => prodEl.appendChild(tab(lang==='ko'?p.titleKo:p.titleJa, act && i===curProd, () => goSeries(i,0,0))));
 }
 function buildPenTabs() {
-  penEl.innerHTML = ''; penEl.className = 'pentabs' + (searchMode ? ' tabsdim' : '');
-  curPens().forEach((p, i) => penEl.appendChild(tab(lang==='ko'?p.titleKo:p.titleJa, !searchMode && i===curPen, () => goSeries(curProd,i,0))));
+  const dim = searchMode && !searchLocated, act = !searchMode || searchLocated;
+  penEl.innerHTML = ''; penEl.className = 'pentabs' + (dim ? ' tabsdim' : '');
+  curPens().forEach((p, i) => penEl.appendChild(tab(lang==='ko'?p.titleKo:p.titleJa, act && i===curPen, () => goSeries(curProd,i,0))));
 }
 function buildSeriesTabs() {
-  serEl.innerHTML = ''; serEl.className = 'seriestabs' + (searchMode ? ' tabsdim' : '');
-  curPens()[curPen].series.forEach((s, i) => serEl.appendChild(tab((lang==='ko'?s.titleKo:s.titleJa)+'<span class="cnt">'+s.cards.length+'</span>', !searchMode && i===curSeries, () => goSeries(curProd,curPen,i))));
+  const dim = searchMode && !searchLocated, act = !searchMode || searchLocated;
+  serEl.innerHTML = ''; serEl.className = 'seriestabs' + (dim ? ' tabsdim' : '');
+  curPens()[curPen].series.forEach((s, i) => serEl.appendChild(tab((lang==='ko'?s.titleKo:s.titleJa)+'<span class="cnt">'+s.cards.length+'</span>', act && i===curSeries, () => goSeries(curProd,curPen,i))));
 }
 
+function isMobile() { return window.matchMedia('(max-width: 900px)').matches; }
 function setHead(search) {
   document.getElementById('thead-row').innerHTML = search
-    ? '<th>카드번호</th><th>캐릭터이름</th><th>시리즈</th><th>수치</th>'
+    ? (isMobile()
+        ? '<th>카드번호</th><th>캐릭터이름</th><th>수치</th><th>시리즈</th>'
+        : '<th>카드번호</th><th>캐릭터이름</th><th>시리즈</th><th>수치</th>')
     : '<th>카드번호</th><th>캐릭터이름</th><th class="col-desc">설명</th><th>수치</th><th class="col-dlg">대사</th>';
 }
 function numCell(c, se) {
@@ -270,6 +281,7 @@ function buildSearchRows(q) {
   setHead(true);
   tbody.innerHTML = '';
   curList = [];
+  const mob = isMobile();
   const ext = document.getElementById('extchk').checked;
   let n = 0; const LIMIT = 800;
   const frag = document.createDocumentFragment();
@@ -281,13 +293,17 @@ function buildSearchRows(q) {
     if (!hay.includes(q)) continue;
     n++;
     if (n <= LIMIT) {
-      curList.push({ c: e.c, se: e.se, lk: e.plKo, lj: e.plJa });
+      curList.push({ c: e.c, se: e.se, lk: e.plKo, lj: e.plJa, pi: e.pi, ei: e.ei, si: e.si });
       const tr = newTr(c);
-      tr.innerHTML = numCell(c, e.se) +
-        '<td class="name">' + (lang==='ko'?c.kn:c.jn) + '</td>' +
-        '<td class="loc2">' + (lang==='ko'?e.plKo:e.plJa) + '</td>' +
-        '<td class="val">' + (lang==='ko'?koVal(c.v):c.v) + '</td>';
-      tr.onclick = () => { showCard(e.se, e.c, e.plKo, e.plJa); closeDrawerOnMobile(); };
+      const nameCell = '<td class="name">' + (lang==='ko'?c.kn:c.jn) + '</td>';
+      const locCell = '<td class="loc2">' + (lang==='ko'?e.plKo:e.plJa) + '</td>';
+      const valCell = '<td class="val">' + (lang==='ko'?koVal(c.v):c.v) + '</td>';
+      tr.innerHTML = numCell(c, e.se) + nameCell + (mob ? valCell + locCell : locCell + valCell);
+      tr.onclick = () => {
+        curProd = e.pi; curPen = e.ei; curSeries = e.si; searchLocated = true;
+        buildProdTabs(); buildPenTabs(); buildSeriesTabs();
+        showCard(e.se, e.c, e.plKo, e.plJa); closeDrawerOnMobile();
+      };
       frag.appendChild(tr);
     }
   }
@@ -352,14 +368,18 @@ function select(no) {
 
 // switch series via tabs
 function goSeries(pi, ei, si) {
-  searchMode = false; curQuery = ''; document.getElementById('q').value = ''; scount.textContent = '';
+  searchMode = false; searchLocated = false; curQuery = ''; document.getElementById('q').value = ''; scount.textContent = '';
   curProd = pi; curPen = ei; curSeries = si; selectedNo = curSer().cards[0].no;
   render();
 }
 
 function render() {
   buildProdTabs(); buildPenTabs(); buildSeriesTabs();
-  if (searchMode) { buildSearchRows(curQuery); }
+  if (searchMode) {
+    buildSearchRows(curQuery);
+    const e = curList.find(function(x){ return x.c.img === selectedImg; });
+    if (e) showCard(e.se, e.c, e.lk, e.lj);
+  }
   else {
     if (!curSer().cards.find(x => x.no === selectedNo)) selectedNo = curSer().cards[0].no;
     buildRows(); select(selectedNo);
@@ -373,9 +393,14 @@ function setLang(l) {
 }
 function filter() {
   const v = document.getElementById('q').value.toLowerCase().trim();
-  if (v) { searchMode = true; curQuery = v; buildProdTabs(); buildPenTabs(); buildSeriesTabs(); buildSearchRows(v); }
+  if (v) { searchMode = true; searchLocated = false; curQuery = v; buildProdTabs(); buildPenTabs(); buildSeriesTabs(); buildSearchRows(v); }
   else { searchMode = false; curQuery = ''; scount.textContent = ''; render(); }
 }
+let _wasMobile = isMobile();
+window.addEventListener('resize', function () {
+  const m = isMobile();
+  if (m !== _wasMobile) { _wasMobile = m; if (searchMode) buildSearchRows(curQuery); }
+});
 function toggleDrawer() { document.body.classList.toggle('drawer-open'); }
 function closeDrawer() { document.body.classList.remove('drawer-open'); }
 function closeDrawerOnMobile() { if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('drawer-open'); }
@@ -458,6 +483,10 @@ function nav(dir) {
   const ni = idx + dir;
   if (ni >= 0 && ni < curList.length) {
     const e = curList[ni];
+    if (searchMode && e.pi !== undefined) {
+      curProd = e.pi; curPen = e.ei; curSeries = e.si; searchLocated = true;
+      buildProdTabs(); buildPenTabs(); buildSeriesTabs();
+    }
     showCard(e.se, e.c, e.lk, e.lj);
     const row = document.querySelector('#tbody tr[data-img="' + e.c.img + '"]');
     if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });

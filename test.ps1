@@ -1,0 +1,1 @@
+Add-Type -AssemblyName System.Drawing; $dir = 'E:\E-Drive\내개인자료\SD건담외전_스캔\2_카드다스업스케일\1_SD건담외전\1_지크지온편\1_라크로아의용자'; $files = Get-ChildItem -Path $dir -Filter '*.png' | Select-Object -First 10; foreach ($f in $files) { $img = [System.Drawing.Image]::FromFile($f.FullName); Write-Output "$($f.Name): $($img.PixelFormat)"; $img.Dispose() }

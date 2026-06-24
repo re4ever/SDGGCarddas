@@ -1,0 +1,6 @@
+DIR=E:\E-Drive\내개인자료\SD건담외전_스캔\2_카드다스업스케일\2_신SD건담외전\3_개투신전기편\1_개투신출현
+OUT=C:\Users\우리집\AppData\Local\Temp\claude\E--E-Drive-------SD--------2----------1-SD-----1-------1--------\77da0e6e-11ec-45a3-af5e-172c8c08dc88\scratchpad\kotest_
+REGION=dlg
+PER=6
+SCALE=5
+IDS=23103530,23103660,23103670,23103690

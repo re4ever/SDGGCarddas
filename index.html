@@ -10,7 +10,8 @@
   body { font-family: "Malgun Gothic", "맑은 고딕", "Meiryo", sans-serif; background: #1a1d24; color: #e8e8ec; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
   #left { width: 56%; display: flex; flex-direction: column; border-right: 2px solid #333842; min-width: 0; background: #1a1d24; }
   header { padding: 10px 18px; background: #232732; border-bottom: 1px solid #333842; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  header h1 { font-size: 16px; font-weight: 700; color: #ffd86b; }
+  header h1 { font-size: 16px; font-weight: 700; color: #ffd86b; cursor: pointer; user-select: none; }
+  header h1:hover { color: #ffe089; }
   header .sub { font-size: 11px; color: #8b94a3; }
   .toggle { margin-left: auto; display: flex; gap: 5px; }
   .toggle button { border: 1px solid #4a5161; background: #2c313d; color: #cfd5e0; padding: 2px 9px; border-radius: 6px; cursor: pointer; font-size: 12px; }
@@ -149,7 +150,7 @@
   </div>
   <div id="right">
     <header>
-      <div><h1>SD건담외전 카드다스 아카이브</h1></div>
+      <div><h1 onclick="goHome()" title="첫 화면으로">SD건담외전 카드다스 아카이브</h1></div>
       <div class="toggle">
         <button id="btn-ko" class="active" onclick="setLang('ko')">한</button>
         <button id="btn-ja" onclick="setLang('ja')">日</button>
@@ -373,6 +374,19 @@ function goSeries(pi, ei, si) {
   searchMode = false; searchLocated = false; curQuery = ''; document.getElementById('q').value = ''; scount.textContent = '';
   curProd = pi; curPen = ei; curSeries = si; selectedNo = curSer().cards[0].no;
   render();
+}
+
+// 제목 클릭 → 첫 화면(첫 제품·편·시리즈의 첫 카드, 검색 해제)로 복귀
+function goHome() {
+  searchMode = false; searchLocated = false; curQuery = '';
+  var q = document.getElementById('q'); if (q) q.value = '';
+  if (scount) scount.textContent = '';
+  curProd = 0; curPen = 0; curSeries = 0;
+  selectedNo = curSer().cards[0].no; selectedImg = curSer().cards[0].img;
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  render();
+  closeDrawerOnMobile();
+  var tw = document.querySelector('.tablewrap'); if (tw) tw.scrollTop = 0;
 }
 
 function render() {

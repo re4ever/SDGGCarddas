@@ -78,6 +78,7 @@
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
   #caption .cmeta { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; min-height: 30px; }
   #caption .cdesc { color: #9aa6b6; font-size: 13px; margin: 4px 0 0; }
+  #caption .cdesc.story { color: #cdd4df; font-size: 14px; line-height: 1.75; max-width: 620px; margin: 12px auto 0; text-align: left; white-space: pre-line; background: #1c2029; border: 1px solid #2f3540; border-radius: 9px; padding: 14px 16px; }
   #stage.portrait #caption .cmeta { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; }
   #stage.portrait #caption .cname { margin: 0; }
   #stage.portrait #preview { max-height: 80vh; border-radius: 5.8% / 4%; }
@@ -272,7 +273,7 @@ function buildRows() {
     const tr = newTr(c);
     tr.innerHTML = numCell(c, se) +
       '<td class="name">' + (lang==='ko'?c.kn:c.jn) + '</td>' +
-      '<td class="desc2">' + (lang==='ko'?(c.kdesc||''):(c.jdesc||'')) + '</td>' +
+      '<td class="desc2">' + (c.story ? '' : (lang==='ko'?(c.kdesc||''):(c.jdesc||''))) + '</td>' +
       '<td class="val">' + (lang==='ko'?koVal(c.v):c.v) + '</td>' +
       '<td class="dlg">' + (lang==='ko'?c.kd:c.jd) + '</td>';
     tr.onclick = () => { select(c.no); closeDrawerOnMobile(); };
@@ -338,7 +339,9 @@ function showCard(se, c, locKo, locJa) {
   setOrient();
   document.getElementById('cap-no').textContent = shownNo(c.no);
   document.getElementById('cap-name').textContent = (lang==='ko'?c.kn:c.jn);
-  document.getElementById('cap-desc').textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
+  var capDesc = document.getElementById('cap-desc');
+  capDesc.textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
+  capDesc.className = 'cdesc' + (c.story ? ' story' : '');
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);
   updateNavButtons();
   fitDialogue();
@@ -349,14 +352,18 @@ function updateNavButtons() {
   if (!prevB || !nextB) return;
   let idx = curList.findIndex(function(e){ return e.c.img === selectedImg; });
   if (idx < 0) idx = 0;
+  const curStory = !!curList[idx].c.story;
+  const hasPrev = navTarget(idx, -1, curStory) >= 0;
+  const hasNext = navTarget(idx, 1, curStory) >= 0;
   let atFirst, atLast;
-  if (searchMode) {
-    atFirst = idx <= 0; atLast = idx >= curList.length - 1;
+  if (searchMode || curStory) {
+    // 스토리 카드는 시리즈를 넘지 않으므로 같은 종류 카드 유무로만 판단
+    atFirst = !hasPrev; atLast = !hasNext;
   } else {
     const flat = seriesFlat();
     const pos = flat.findIndex(function(s){ return s.pi===curProd && s.ei===curPen && s.si===curSeries; });
-    atFirst = (pos <= 0) && (idx <= 0);
-    atLast = (pos >= flat.length - 1) && (idx >= curList.length - 1);
+    atFirst = !hasPrev && (pos <= 0);
+    atLast = !hasNext && (pos >= flat.length - 1);
   }
   prevB.disabled = atFirst; nextB.disabled = atLast;
 }
@@ -372,9 +379,13 @@ function select(no) {
 // switch series via tabs
 function goSeries(pi, ei, si) {
   searchMode = false; searchLocated = false; curQuery = ''; document.getElementById('q').value = ''; scount.textContent = '';
-  curProd = pi; curPen = ei; curSeries = si; selectedNo = curSer().cards[0].no;
+  curProd = pi; curPen = ei; curSeries = si; selectedNo = firstNav(curSer().cards).no;
   render();
 }
+
+// 스토리 카드(네비게이션 제외)용 헬퍼
+function firstNav(cards){ for(var i=0;i<cards.length;i++){ if(!cards[i].story) return cards[i]; } return cards[0]; }
+function lastNav(cards){ for(var i=cards.length-1;i>=0;i--){ if(!cards[i].story) return cards[i]; } return cards[cards.length-1]; }
 
 // 제목 클릭 → 첫 화면(첫 제품·편·시리즈의 첫 카드, 검색 해제)로 복귀
 function goHome() {
@@ -382,7 +393,7 @@ function goHome() {
   var q = document.getElementById('q'); if (q) q.value = '';
   if (scount) scount.textContent = '';
   curProd = 0; curPen = 0; curSeries = 0;
-  selectedNo = curSer().cards[0].no; selectedImg = curSer().cards[0].img;
+  var fc = firstNav(curSer().cards); selectedNo = fc.no; selectedImg = fc.img;
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   render();
   closeDrawerOnMobile();
@@ -397,7 +408,7 @@ function render() {
     if (e) showCard(e.se, e.c, e.lk, e.lj);
   }
   else {
-    if (!curSer().cards.find(x => x.no === selectedNo)) selectedNo = curSer().cards[0].no;
+    if (!curSer().cards.find(x => x.no === selectedNo)) selectedNo = firstNav(curSer().cards).no;
     buildRows(); select(selectedNo);
   }
 }
@@ -492,12 +503,19 @@ function seriesFlat() {
   PRODUCTS.forEach(function(p, pi){ p.pens.forEach(function(pe, ei){ pe.series.forEach(function(se, si){ SERIES_FLAT.push({ pi: pi, ei: ei, si: si }); }); }); });
   return SERIES_FLAT;
 }
+// 같은 종류(스토리/일반)의 다음 카드 인덱스 (없으면 -1)
+function navTarget(idx, dir, story) {
+  let ni = idx + dir;
+  while (ni >= 0 && ni < curList.length && !!curList[ni].c.story !== story) ni += dir;
+  return (ni >= 0 && ni < curList.length) ? ni : -1;
+}
 function nav(dir) {
   if (!curList.length) return;
   let idx = curList.findIndex(function(e){ return e.c.img === selectedImg; });
   if (idx < 0) idx = 0;
-  const ni = idx + dir;
-  if (ni >= 0 && ni < curList.length) {
+  const curStory = !!curList[idx].c.story;
+  let ni = navTarget(idx, dir, curStory); // 스토리는 스토리끼리, 일반은 일반끼리 이동
+  if (ni >= 0) {
     const e = curList[ni];
     if (searchMode && e.pi !== undefined) {
       curProd = e.pi; curPen = e.ei; curSeries = e.si; searchLocated = true;
@@ -510,7 +528,9 @@ function nav(dir) {
   }
   // 검색 중에는 결과 안에서만 이동
   if (searchMode) return;
-  // 시리즈 경계 → 인접 시리즈로 이동 (끝에서는 순환)
+  // 스토리 카드는 시리즈 경계를 넘지 않음 (해당 시리즈 스토리 안에서만 이동)
+  if (curStory) return;
+  // 일반 카드: 시리즈 경계 → 인접 시리즈로 이동 (끝에서는 순환)
   const flat = seriesFlat();
   const pos = flat.findIndex(function(s){ return s.pi===curProd && s.ei===curPen && s.si===curSeries; });
   if (pos < 0) return;
@@ -519,7 +539,7 @@ function nav(dir) {
   const s = flat[np];
   curProd = s.pi; curPen = s.ei; curSeries = s.si;
   const cards = curSer().cards;
-  const tgt = (dir > 0) ? cards[0] : cards[cards.length - 1];
+  const tgt = (dir > 0) ? firstNav(cards) : lastNav(cards);
   selectedNo = tgt.no; selectedImg = tgt.img;
   render();
   const row = document.querySelector('#tbody tr.selected');
@@ -564,7 +584,7 @@ function initApp() {
   PRODUCTS.forEach(function(p, pi){ p.pens.forEach(function(pe, ei){ pe.series.forEach(function(se, si){ se.cards.forEach(function(c){
     ALL.push({ c: c, pi: pi, ei: ei, si: si, se: se, plKo: p.titleKo + ' · ' + pe.titleKo + ' · ' + se.titleKo, plJa: p.titleJa + ' · ' + pe.titleJa + ' · ' + se.titleJa });
   }); }); }); });
-  selectedNo = curSer().cards[0].no;
+  selectedNo = firstNav(curSer().cards).no;
   if (!goToHash()) render();
   window.addEventListener('hashchange', goToHash);
 }

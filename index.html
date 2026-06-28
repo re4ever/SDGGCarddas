@@ -78,7 +78,8 @@
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
   #caption .cmeta { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; min-height: 30px; }
   #caption .cdesc { color: #9aa6b6; font-size: 13px; margin: 4px 0 0; }
-  #caption .cdesc.story { color: #cdd4df; font-size: 14px; line-height: 1.75; max-width: 620px; margin: 12px auto 0; text-align: left; white-space: pre-line; background: #1c2029; border: 1px solid #2f3540; border-radius: 9px; padding: 14px 16px; }
+  .cdesc.story { color: #cdd4df; font-size: 14px; line-height: 1.75; max-width: 620px; margin: 12px auto; text-align: left; white-space: pre-line; background: #1c2029; border: 1px solid #2f3540; border-radius: 9px; padding: 30px 16px 14px; position: relative; }
+  .cdesc.story::before { content: "STORY"; position: absolute; top: 8px; left: 16px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #6f7a8a; }
   #stage.portrait #caption .cmeta { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; }
   #stage.portrait #caption .cname { margin: 0; }
   #stage.portrait #preview { max-height: 80vh; border-radius: 5.8% / 4%; }
@@ -129,6 +130,10 @@
     .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
     body.drawer-open .backdrop { display: block; }
   }
+  #preview { cursor: zoom-in; }
+  #imgovl { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.9); cursor: zoom-out; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+  #imgovl.show { display: flex; }
+  #imgovl img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 50px rgba(0,0,0,.7); }
 </style>
 </head>
 <body>
@@ -164,7 +169,7 @@
       <div id="cap-dlg"></div>
       <div class="imgwrap">
         <button class="nav-btn nav-prev" onclick="nav(-1)" aria-label="이전 카드">‹</button>
-        <img id="preview" src="" alt="">
+        <img id="preview" src="" alt="" onclick="openImgOverlay()" title="클릭하면 확대">
         <button class="nav-btn nav-next" onclick="nav(1)" aria-label="다음 카드">›</button>
       </div>
       <div id="caption">
@@ -201,6 +206,7 @@
       </div>
     </div>
   </div>
+  <div id="imgovl" onclick="closeImgOverlay()"><img id="imgovl-img" src="" alt=""></div>
 
 <script src="cards.js"></script>
 <script>
@@ -342,6 +348,16 @@ function showCard(se, c, locKo, locJa) {
   var capDesc = document.getElementById('cap-desc');
   capDesc.textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
   capDesc.className = 'cdesc' + (c.story ? ' story' : '');
+  // 스토리 카드는 번역 본문을 카드 이미지 위로, 일반 카드는 캡션 안(원위치)으로
+  var stage = document.getElementById('stage');
+  var imgwrap = stage.querySelector('.imgwrap');
+  if (c.story) {
+    if (capDesc.previousElementSibling !== document.getElementById('cap-dlg')) stage.insertBefore(capDesc, imgwrap);
+  } else {
+    var caption = document.getElementById('caption');
+    var report = document.getElementById('report');
+    if (capDesc.parentNode !== caption) caption.insertBefore(capDesc, report);
+  }
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);
   updateNavButtons();
   fitDialogue();
@@ -545,7 +561,17 @@ function nav(dir) {
   const row = document.querySelector('#tbody tr.selected');
   if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
 }
+function openImgOverlay() {
+  var img = document.getElementById('preview');
+  if (!img || !img.src) return;
+  var ovl = document.getElementById('imgovl');
+  document.getElementById('imgovl-img').src = img.src;
+  ovl.classList.add('show');
+}
+function closeImgOverlay() { document.getElementById('imgovl').classList.remove('show'); }
 document.addEventListener('keydown', function(ev){
+  var ovl = document.getElementById('imgovl');
+  if (ovl && ovl.classList.contains('show')) { if (ev.key === 'Escape') closeImgOverlay(); return; }
   var rm = document.getElementById('rmodal');
   if (rm && rm.classList.contains('show')) { if (ev.key === 'Escape') closeReport(); return; }
   if (ev.target && (ev.target.id === 'q' || ev.target.id === 'rm-suggest')) return;

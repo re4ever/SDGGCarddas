@@ -575,8 +575,8 @@ function openImgOverlay() {
   var wide = img.naturalWidth > img.naturalHeight;
   // 라운드: 일반 카드는 인라인 비율과 동일, 파노라마는 라운드 없이 그대로
   oimg.className = pano ? 'pano' : (wide ? 'land' : 'port');
-  // 모바일에서 가로로 긴(landscape) 일반 카드는 시계방향 90° 회전(파노라마 제외)
-  if (wide && !pano && isMobile()) oimg.classList.add('rot');
+  // 모바일에서 가로로 긴(landscape) 이미지·파노라마는 시계방향 90° 회전해 세로로 세움
+  if (wide && isMobile()) oimg.classList.add('rot');
   ovl.classList.add('show');
 }
 function closeImgOverlay() { document.getElementById('imgovl').classList.remove('show'); }

@@ -131,9 +131,12 @@
     body.drawer-open .backdrop { display: block; }
   }
   #preview { cursor: zoom-in; }
-  #imgovl { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.9); cursor: zoom-out; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+  #imgovl { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.9); cursor: zoom-out; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; }
   #imgovl.show { display: flex; }
-  #imgovl img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 50px rgba(0,0,0,.7); }
+  #imgovl img { max-width: 96vw; max-height: 96vh; object-fit: contain; box-shadow: 0 10px 50px rgba(0,0,0,.7); }
+  #imgovl img.port { border-radius: 5.8% / 4%; }
+  #imgovl img.land { border-radius: 4% / 5.8%; }
+  #imgovl img.pano { border-radius: 0; }
   #imgovl img.rot { transform: rotate(90deg); max-width: 96vh; max-height: 96vw; }
 </style>
 </head>
@@ -568,9 +571,12 @@ function openImgOverlay() {
   var ovl = document.getElementById('imgovl');
   var oimg = document.getElementById('imgovl-img');
   oimg.src = img.src;
-  // 모바일에서 가로로 긴(landscape) 이미지는 시계방향 90° 회전해 화면을 채움
+  var pano = /panorama/i.test(img.src);
   var wide = img.naturalWidth > img.naturalHeight;
-  oimg.classList.toggle('rot', wide && isMobile());
+  // 라운드: 일반 카드는 인라인 비율과 동일, 파노라마는 라운드 없이 그대로
+  oimg.className = pano ? 'pano' : (wide ? 'land' : 'port');
+  // 모바일에서 가로로 긴(landscape) 일반 카드는 시계방향 90° 회전(파노라마 제외)
+  if (wide && !pano && isMobile()) oimg.classList.add('rot');
   ovl.classList.add('show');
 }
 function closeImgOverlay() { document.getElementById('imgovl').classList.remove('show'); }

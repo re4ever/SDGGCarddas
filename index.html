@@ -582,24 +582,28 @@ function nav(dir) {
   const row = document.querySelector('#tbody tr.selected');
   if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
 }
-// 현재 #preview 이미지를 오버레이에 반영(방향/라운드/회전 적용). 로드 후 자연 크기로 판정.
+// 현재 #preview 이미지를 오버레이에 반영(방향/라운드/회전 적용).
+// 깜빡임 방지: 새 이미지를 먼저 프리로드해 크기를 알아낸 뒤 src와 클래스를 "동시에" 교체.
+// (그 전까지는 직전 이미지가 올바른 클래스 그대로 유지됨)
 function setOverlayImg() {
   var img = document.getElementById('preview');
   var oimg = document.getElementById('imgovl-img');
   if (!img || !img.src) return false;
   var src = img.src;
   var pano = /panorama/i.test(src);
-  function apply() {
-    var wide = oimg.naturalWidth > oimg.naturalHeight;
+  function show(w, h) {
+    var wide = w > h;
     // 라운드: 일반 카드는 인라인 비율과 동일, 파노라마는 라운드 없이 그대로
-    oimg.className = pano ? 'pano' : (wide ? 'land' : 'port');
+    var cls = pano ? 'pano' : (wide ? 'land' : 'port');
     // 모바일에서 가로로 긴(landscape) 이미지·파노라마는 시계방향 90° 회전해 세로로 세움
-    if (wide && isMobile()) oimg.classList.add('rot');
+    if (wide && isMobile()) cls += ' rot';
+    oimg.className = cls;
+    oimg.src = src;
   }
-  oimg.className = '';
-  oimg.onload = apply;
-  oimg.src = src;
-  if (oimg.complete && oimg.naturalWidth) apply();
+  var pre = new Image();
+  pre.onload = function(){ show(pre.naturalWidth, pre.naturalHeight); };
+  pre.src = src;
+  if (pre.complete && pre.naturalWidth) show(pre.naturalWidth, pre.naturalHeight);
   return true;
 }
 function openImgOverlay() {

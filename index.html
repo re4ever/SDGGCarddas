@@ -144,6 +144,12 @@
   #ovl-next { right: 12px; }
   #ovl-close { top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; font-size: 20px; }
   #imgovl .ovl-nav:hover, #ovl-close:hover { background: rgba(255,255,255,.28); }
+  @media (max-width: 900px) {
+    /* 모바일: 이전=상단 중앙, 다음=하단 중앙 (셰브론을 위/아래로 회전) */
+    #imgovl .ovl-nav { top: auto; left: 50%; right: auto; transform: translateX(-50%) rotate(90deg); }
+    #ovl-prev { top: 12px; }
+    #ovl-next { bottom: 12px; }
+  }
 </style>
 </head>
 <body>

@@ -138,6 +138,12 @@
   #imgovl img.land { border-radius: 4% / 5.8%; }
   #imgovl img.pano { border-radius: 0; }
   #imgovl img.rot { transform: rotate(90deg); max-width: 96vh; max-width: 96dvh; max-height: 96vw; }
+  #imgovl .ovl-nav, #ovl-close { position: absolute; z-index: 1001; border: none; cursor: pointer; color: #fff; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 0; -webkit-tap-highlight-color: transparent; transition: background .15s; }
+  #imgovl .ovl-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; border-radius: 50%; font-size: 34px; line-height: 1; }
+  #ovl-prev { left: 12px; }
+  #ovl-next { right: 12px; }
+  #ovl-close { top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; font-size: 20px; }
+  #imgovl .ovl-nav:hover, #ovl-close:hover { background: rgba(255,255,255,.28); }
 </style>
 </head>
 <body>
@@ -210,7 +216,12 @@
       </div>
     </div>
   </div>
-  <div id="imgovl" onclick="closeImgOverlay()"><img id="imgovl-img" src="" alt=""></div>
+  <div id="imgovl">
+    <button id="ovl-prev" class="ovl-nav" aria-label="이전 카드">‹</button>
+    <img id="imgovl-img" src="" alt="">
+    <button id="ovl-next" class="ovl-nav" aria-label="다음 카드">›</button>
+    <button id="ovl-close" aria-label="닫기">✕</button>
+  </div>
 
 <script src="cards.js"></script>
 <script>
@@ -565,24 +576,41 @@ function nav(dir) {
   const row = document.querySelector('#tbody tr.selected');
   if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
 }
-function openImgOverlay() {
+// 현재 #preview 이미지를 오버레이에 반영(방향/라운드/회전 적용). 로드 후 자연 크기로 판정.
+function setOverlayImg() {
   var img = document.getElementById('preview');
-  if (!img || !img.src) return;
-  var ovl = document.getElementById('imgovl');
   var oimg = document.getElementById('imgovl-img');
-  oimg.src = img.src;
-  var pano = /panorama/i.test(img.src);
-  var wide = img.naturalWidth > img.naturalHeight;
-  // 라운드: 일반 카드는 인라인 비율과 동일, 파노라마는 라운드 없이 그대로
-  oimg.className = pano ? 'pano' : (wide ? 'land' : 'port');
-  // 모바일에서 가로로 긴(landscape) 이미지·파노라마는 시계방향 90° 회전해 세로로 세움
-  if (wide && isMobile()) oimg.classList.add('rot');
-  ovl.classList.add('show');
+  if (!img || !img.src) return false;
+  var src = img.src;
+  var pano = /panorama/i.test(src);
+  function apply() {
+    var wide = oimg.naturalWidth > oimg.naturalHeight;
+    // 라운드: 일반 카드는 인라인 비율과 동일, 파노라마는 라운드 없이 그대로
+    oimg.className = pano ? 'pano' : (wide ? 'land' : 'port');
+    // 모바일에서 가로로 긴(landscape) 이미지·파노라마는 시계방향 90° 회전해 세로로 세움
+    if (wide && isMobile()) oimg.classList.add('rot');
+  }
+  oimg.className = '';
+  oimg.onload = apply;
+  oimg.src = src;
+  if (oimg.complete && oimg.naturalWidth) apply();
+  return true;
+}
+function openImgOverlay() {
+  if (!setOverlayImg()) return;
+  document.getElementById('imgovl').classList.add('show');
 }
 function closeImgOverlay() { document.getElementById('imgovl').classList.remove('show'); }
+// 확대 모드 안에서 이전/다음 카드로 이동하고 오버레이 이미지를 갱신
+function overlayNav(dir) { nav(dir); setOverlayImg(); }
 document.addEventListener('keydown', function(ev){
   var ovl = document.getElementById('imgovl');
-  if (ovl && ovl.classList.contains('show')) { if (ev.key === 'Escape') closeImgOverlay(); return; }
+  if (ovl && ovl.classList.contains('show')) {
+    if (ev.key === 'Escape') closeImgOverlay();
+    else if (ev.key === 'ArrowLeft') overlayNav(-1);
+    else if (ev.key === 'ArrowRight') overlayNav(1);
+    return;
+  }
   var rm = document.getElementById('rmodal');
   if (rm && rm.classList.contains('show')) { if (ev.key === 'Escape') closeReport(); return; }
   if (ev.target && (ev.target.id === 'q' || ev.target.id === 'rm-suggest')) return;
@@ -604,6 +632,39 @@ document.addEventListener('keydown', function(ev){
       nav(dx < 0 ? 1 : -1);
     }
   }, { passive: true });
+})();
+// 확대 모드: 좌우 스와이프=이동, 탭=닫기 (스와이프 직후의 합성 click은 무시)
+(function(){
+  const ovl = document.getElementById('imgovl');
+  let sx = 0, sy = 0, st = 0, moved = false, tracking = false, suppressClick = false;
+  ovl.addEventListener('touchstart', function(e){
+    if (e.target.closest('button')) { tracking = false; return; } // 버튼 탭은 스와이프/닫기 처리 제외
+    if (e.touches.length !== 1) { tracking = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); moved = false; tracking = true;
+  }, { passive: true });
+  ovl.addEventListener('touchmove', function(e){
+    if (!tracking) return;
+    if (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10) moved = true;
+  }, { passive: true });
+  ovl.addEventListener('touchend', function(e){
+    if (!tracking) return; tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4 && (Date.now() - st) < 700) {
+      overlayNav(dx < 0 ? 1 : -1);
+    } else if (!moved) {
+      closeImgOverlay();
+    }
+    suppressClick = true; setTimeout(function(){ suppressClick = false; }, 400);
+  }, { passive: true });
+  ovl.addEventListener('click', function(){
+    if (suppressClick) { suppressClick = false; return; }
+    closeImgOverlay();
+  });
+  // 화면 버튼: 이전/다음/닫기 (stopPropagation으로 오버레이 닫기 클릭과 분리)
+  document.getElementById('ovl-prev').addEventListener('click', function(ev){ ev.stopPropagation(); overlayNav(-1); });
+  document.getElementById('ovl-next').addEventListener('click', function(ev){ ev.stopPropagation(); overlayNav(1); });
+  document.getElementById('ovl-close').addEventListener('click', function(ev){ ev.stopPropagation(); closeImgOverlay(); });
 })();
 
 function initApp() {

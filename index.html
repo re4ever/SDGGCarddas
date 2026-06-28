@@ -138,17 +138,20 @@
   #imgovl img.land { border-radius: 4% / 5.8%; }
   #imgovl img.pano { border-radius: 0; }
   #imgovl img.rot { transform: rotate(90deg); max-width: 96vh; max-width: 96dvh; max-height: 96vw; }
-  #imgovl .ovl-nav, #ovl-close { position: absolute; z-index: 1001; border: none; cursor: pointer; color: #fff; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 0; -webkit-tap-highlight-color: transparent; transition: background .15s; }
-  #imgovl .ovl-nav { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; border-radius: 50%; font-size: 34px; line-height: 1; }
-  #ovl-prev { left: 12px; }
-  #ovl-next { right: 12px; }
-  #ovl-close { top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; font-size: 20px; }
+  #imgovl .ovl-nav, #ovl-close { position: absolute; z-index: 1001; border: none; cursor: pointer; color: #fff; background: rgba(0,0,0,.32); display: flex; align-items: center; justify-content: center; padding: 0; -webkit-tap-highlight-color: transparent; transition: background .15s; }
+  /* 데스크톱: 좌/우 가장자리 꽉 찬 세로 바 */
+  #imgovl .ovl-nav { top: 0; bottom: 0; width: 64px; font-size: 40px; line-height: 1; }
+  #imgovl .ovl-nav span { display: inline-block; }
+  #ovl-prev { left: 0; }
+  #ovl-next { right: 0; }
+  #ovl-close { top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; font-size: 20px; z-index: 1002; background: rgba(0,0,0,.5); }
   #imgovl .ovl-nav:hover, #ovl-close:hover { background: rgba(255,255,255,.28); }
   @media (max-width: 900px) {
-    /* 모바일: 이전=상단 중앙, 다음=하단 중앙 (셰브론을 위/아래로 회전) */
-    #imgovl .ovl-nav { top: auto; left: 50%; right: auto; transform: translateX(-50%) rotate(90deg); }
-    #ovl-prev { top: 12px; }
-    #ovl-next { bottom: 12px; }
+    /* 모바일: 상/하 가장자리 꽉 찬 가로 바 (셰브론을 위/아래로 회전) */
+    #imgovl .ovl-nav { top: auto; bottom: auto; left: 0; right: 0; width: auto; height: 60px; }
+    #ovl-prev { top: 0; }
+    #ovl-next { bottom: 0; }
+    #imgovl .ovl-nav span { transform: rotate(90deg); }
   }
 </style>
 </head>
@@ -223,9 +226,9 @@
     </div>
   </div>
   <div id="imgovl">
-    <button id="ovl-prev" class="ovl-nav" aria-label="이전 카드">‹</button>
+    <button id="ovl-prev" class="ovl-nav" aria-label="이전 카드"><span>‹</span></button>
     <img id="imgovl-img" src="" alt="">
-    <button id="ovl-next" class="ovl-nav" aria-label="다음 카드">›</button>
+    <button id="ovl-next" class="ovl-nav" aria-label="다음 카드"><span>›</span></button>
     <button id="ovl-close" aria-label="닫기">✕</button>
   </div>
 

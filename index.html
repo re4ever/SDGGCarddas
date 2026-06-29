@@ -611,11 +611,17 @@ function setOverlayImg() {
   if (pre.complete && pre.naturalWidth) show(pre.naturalWidth, pre.naturalHeight);
   return true;
 }
+var overlayClosedAt = 0;
 function openImgOverlay() {
+  // 탭으로 닫은 직후 발생하는 유령 클릭이 아래 카드(#preview)에 떨어져 다시 열리는 것 방지
+  if (Date.now() - overlayClosedAt < 450) return;
   if (!setOverlayImg()) return;
   document.getElementById('imgovl').classList.add('show');
 }
-function closeImgOverlay() { document.getElementById('imgovl').classList.remove('show'); }
+function closeImgOverlay() {
+  document.getElementById('imgovl').classList.remove('show');
+  overlayClosedAt = Date.now();
+}
 // 확대 모드 안에서 이전/다음 카드로 이동하고 오버레이 이미지를 갱신
 function overlayNav(dir) { nav(dir); setOverlayImg(); }
 document.addEventListener('keydown', function(ev){

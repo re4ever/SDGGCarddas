@@ -131,6 +131,10 @@
     body.drawer-open .backdrop { display: block; }
   }
   #preview { cursor: zoom-in; }
+  #cleared-sec { margin-top: 16px; padding-top: 14px; border-top: 1px solid #2c313d; text-align: center; }
+  .cleared-label { font-size: 12px; font-weight: 700; color: #9aa3b2; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+  .cleared-img { max-width: 100%; max-height: 340px; display: block; margin: 0 auto; }
+  .cleared-img + .cleared-img { margin-top: 12px; }
   #imgovl { display: none; position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100dvh; z-index: 1000; background: rgba(0,0,0,.9); cursor: zoom-out; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; }
   #imgovl.show { display: flex; }
   #imgovl img { max-width: 96vw; max-height: 96vh; max-height: 96dvh; object-fit: contain; box-shadow: 0 10px 50px rgba(0,0,0,.7); }
@@ -211,6 +215,10 @@
           </div>
         </div>
       </div>
+      <div id="cleared-sec" style="display:none">
+        <div class="cleared-label">Cleared Image</div>
+        <div id="cleared-imgs"></div>
+      </div>
     </div>
   </div>
   <div id="rtoast"></div>
@@ -235,8 +243,10 @@
   </div>
 
 <script src="cards.js"></script>
+<script src="cleared.js"></script>
 <script>
 let PRODUCTS = [];
+let CLEARED = (typeof window !== 'undefined' && window.CLEARED) ? window.CLEARED : {}; // cleared.js의 window.CLEARED 사용
 
 let lang = 'ko', curProd = 0, curPen = 0, curSeries = 0, selectedNo = null;
 let searchLocated = false;
@@ -385,6 +395,15 @@ function showCard(se, c, locKo, locJa) {
     if (capDesc.parentNode !== caption) caption.insertBefore(capDesc, report);
   }
   document.getElementById('cap-val').textContent = (lang==='ko'?koVal(c.v):c.v);
+  // Cleared Image 섹션: cleared.json(CLEARED)에 카드 id가 있으면 표시 (여러 장 가능)
+  var clrSec = document.getElementById('cleared-sec');
+  var clrBox = document.getElementById('cleared-imgs');
+  var clrData = CLEARED[cardIdOf(c)];
+  var clrs = clrData ? (Array.isArray(clrData) ? clrData : [clrData]) : [];
+  if (clrs.length) {
+    clrBox.innerHTML = clrs.map(function(s){ return '<img class="cleared-img" src="' + s + '" alt="Cleared Image">'; }).join('');
+    clrSec.style.display = '';
+  } else { clrBox.innerHTML = ''; clrSec.style.display = 'none'; }
   updateNavButtons();
   fitDialogue();
 }
@@ -714,6 +733,7 @@ function initApp() {
 }
 if (typeof CARDS !== 'undefined' && CARDS && CARDS.length) { PRODUCTS = CARDS; initApp(); }
 else { document.getElementById('tbody').innerHTML = '<tr><td style="padding:20px;color:#e88">카드 데이터(cards.js)를 불러오지 못했습니다.</td></tr>'; }
+// Cleared Image 매핑(수동 편집용)을 별도 cleared.json에서 로드. 로드되면 현재 카드 갱신.
 </script>
 </body>
 </html>

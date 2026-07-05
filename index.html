@@ -77,7 +77,8 @@
   #cap-link:hover { color: #ffd86b; }
   #caption .cval { color: #7fd1a0; font-family: Consolas, monospace; font-size: 14px; }
   #caption .cmeta { display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; min-height: 30px; }
-  #caption .cdesc { color: #9aa6b6; font-size: 13px; margin: 4px 0 0; }
+  #caption .cdesc { color: #9aa6b6; font-size: 13px; margin: 4px 0 0; white-space: pre-line; }
+  #cap-box { display: none; margin: 8px 0 0; padding: 8px 11px; border: 1px solid #3a4150; border-radius: 6px; background: rgba(255,255,255,.045); color: #aeb6c2; font-size: 12.5px; line-height: 1.55; white-space: pre-line; }
   .cdesc.story { color: #cdd4df; font-size: 14px; line-height: 1.75; max-width: 620px; margin: 12px auto; text-align: left; white-space: pre-line; background: #1c2029; border: 1px solid #2f3540; border-radius: 9px; padding: 30px 16px 14px; position: relative; }
   .cdesc.story::before { content: "STORY"; position: absolute; top: 8px; left: 16px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #6f7a8a; }
   #stage.portrait #caption .cmeta { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 2px 12px; }
@@ -131,6 +132,8 @@
     body.drawer-open .backdrop { display: block; }
   }
   #preview { cursor: zoom-in; }
+  #orig-toggle { margin-left: 8px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; border: 1px solid #4a5161; border-radius: 6px; background: #2c313d; color: #cfd5e0; cursor: pointer; vertical-align: middle; }
+  #orig-toggle:hover { background: #39414f; }
   #cleared-sec { margin-top: 16px; padding-top: 14px; border-top: 1px solid #2c313d; text-align: center; }
   .cleared-label { font-size: 12px; font-weight: 700; color: #9aa3b2; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
   .cleared-img { max-width: 100%; max-height: 340px; display: block; margin: 0 auto; }
@@ -203,8 +206,10 @@
           <span class="cname" id="cap-name"></span>
           <span class="cval" id="cap-val"></span>
           <button id="cap-link" title="이 카드 링크 복사" onclick="copyCardLink()">🔗</button>
+          <button id="orig-toggle" style="display:none" onclick="toggleOrig(event)">원본 카드</button>
         </div>
         <div class="cdesc" id="cap-desc"></div>
+        <div id="cap-box"></div>
         <div id="report">
           <div class="rnote">※ 카드의 문자는 AI로 인식·번역한 것으로, 실제 원문과 차이가 있을 수 있습니다.</div>
           <div class="rlabel">오역 신고</div>
@@ -244,9 +249,12 @@
 
 <script src="cards.js"></script>
 <script src="cleared.js"></script>
+<script src="origcard.js"></script>
 <script>
 let PRODUCTS = [];
 let CLEARED = (typeof window !== 'undefined' && window.CLEARED) ? window.CLEARED : {}; // cleared.js의 window.CLEARED 사용
+let ORIGCARD = (typeof window !== 'undefined' && window.ORIGCARD) ? window.ORIGCARD : {}; // origcard.js의 window.ORIGCARD (원본 카드 이미지)
+let origShowing = false, origMainSrc = null, origAltSrc = null; // 원본 카드 토글 상태
 
 let lang = 'ko', curProd = 0, curPen = 0, curSeries = 0, selectedNo = null;
 let searchLocated = false;
@@ -370,6 +378,17 @@ function fitDialogue() {
   while (el.scrollWidth > el.clientWidth + 1 && size > 8 && guard < 40) { size -= 0.5; el.style.fontSize = size + 'px'; guard++; }
 }
 function cardIdOf(c) { return c.img.replace(/\.(jpg|png)$/i, ''); }
+// 원본 카드 토글: 메인 카드 이미지를 리어레인지↔원본으로 교체
+function toggleOrig(ev) {
+  if (ev) ev.stopPropagation();
+  if (!origAltSrc) return;
+  origShowing = !origShowing;
+  var img = document.getElementById('preview');
+  img.onload = setOrient;
+  img.src = origShowing ? origAltSrc : origMainSrc;
+  setOrient();
+  document.getElementById('orig-toggle').textContent = origShowing ? '현재 카드' : '원본 카드';
+}
 function showCard(se, c, locKo, locJa) {
   selectedImg = c.img; selectedNo = c.no;
   try { history.replaceState(null, '', '#' + cardIdOf(c)); } catch (e) {}
@@ -383,6 +402,11 @@ function showCard(se, c, locKo, locJa) {
   document.getElementById('cap-name').textContent = (lang==='ko'?c.kn:c.jn);
   var capDesc = document.getElementById('cap-desc');
   capDesc.textContent = (lang==='ko'?(c.kdesc||''):(c.jdesc||''));
+  // 추가 설명(뒷면 박스 스토리) — 네모박스로 분리 표시
+  var capBox = document.getElementById('cap-box');
+  var boxText = (lang==='ko' ? (c.boxk||'') : (c.boxj||''));
+  if (boxText) { capBox.textContent = boxText; capBox.style.display = 'block'; }
+  else { capBox.textContent = ''; capBox.style.display = 'none'; }
   capDesc.className = 'cdesc' + (c.story ? ' story' : '');
   // 스토리 카드는 번역 본문을 카드 이미지 위로, 일반 카드는 캡션 안(원위치)으로
   var stage = document.getElementById('stage');
@@ -404,6 +428,19 @@ function showCard(se, c, locKo, locJa) {
     clrBox.innerHTML = clrs.map(function(s){ return '<img class="cleared-img" src="' + s + '" alt="Cleared Image">'; }).join('');
     clrSec.style.display = '';
   } else { clrBox.innerHTML = ''; clrSec.style.display = 'none'; }
+  // 원본 카드 토글: origcard.js(ORIGCARD)에 있으면 버튼 표시 → 메인 이미지 교체
+  var ocData = ORIGCARD[cardIdOf(c)];
+  var origToggle = document.getElementById('orig-toggle');
+  origShowing = false;
+  if (ocData) {
+    origMainSrc = imgOf(se, c);
+    origAltSrc = Array.isArray(ocData) ? ocData[0] : ocData;
+    origToggle.textContent = '원본 카드';
+    origToggle.style.display = 'block';
+  } else {
+    origMainSrc = origAltSrc = null;
+    origToggle.style.display = 'none';
+  }
   updateNavButtons();
   fitDialogue();
 }
